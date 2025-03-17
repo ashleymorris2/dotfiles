@@ -3,6 +3,7 @@ export PATH="$PATH:/Users/ashleymorris/Developer/flutter/bin"
 export GEM_HOME=$HOME/.gem
 export PATH=$GEM_HOME/bin:$PATH
 export PATH="$PATH":"$HOME/.pub-cache/bin"
+export EDITOR=nvim
 
 # Path to your oh-my-zsh installation.
 export ZSH="$HOME/.oh-my-zsh"
@@ -75,9 +76,14 @@ source $ZSH/oh-my-zsh.sh
 
 # User configuration
 
-export GOROOT=$(brew --prefix go)/libexec
-export GOPATH=$HOME/go
-export PATH=$GOPATH/bin:$GOROOT/bin:$HOME/.local/bin:$PATH
+# [BEGIN MACOS] 
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  # Configure GO
+  export GOROOT=$(brew --prefix go)/libexec
+  export GOPATH=$HOME/go
+  export PATH=$GOPATH/bin:$GOROOT/bin:$HOME/.local/bin:$PATH
+fi
+# [END MACOS]
 
 # export MANPATH="/usr/local/man:$MANPATH"
 
