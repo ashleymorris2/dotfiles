@@ -25,21 +25,25 @@ config.color_scheme = 'hardhacker'
 
 config.use_dead_keys = false
 
-wezterm.on("update-status", function(window, pane)
-  local process_name = pane:get_foreground_process_name()
+{{- if eq .chezmoi.os "darwin" -}}
+	wezterm.on("update-status", function(window, pane)
+	  local process_name = pane:get_foreground_process_name()
 
-  if process_name and process_name:match("nvim") then
-    window:set_config_overrides({
-      window_background_opacity = 1,  -- More solid when Neovim is running
-      macos_window_background_blur = 0,  -- Reduce blur when focused on Neovim
-    })
-  else
-    window:set_config_overrides({
-      window_background_opacity = 0.8,  -- Normal transparency when using other apps
-      macos_window_background_blur = 10,  -- Increase blur when not in Neovim
-    })
-  end
-end)
+	  if process_name and process_name:match("nvim") then
+	    window:set_config_overrides({
+	      window_background_opacity = 1,  -- More solid when Neovim is running
+	      macos_window_background_blur = 0,  -- Reduce blur when focused on Neovim
+	    })
+	  else
+	    window:set_config_overrides({
+	      window_background_opacity = 0.8,  -- Normal transparency when using other apps
+	      macos_window_background_blur = 10,  -- Increase blur when not in Neovim
+	    })
+	  end
+	end)
+{{ end -}}
 
 -- KEYS
+-- ADD KEYS
+
 return config

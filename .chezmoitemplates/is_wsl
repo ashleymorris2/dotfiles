@@ -1,0 +1,3 @@
+{{- define "is_wsl" -}}
+  {{ eq .chezmoi.os "linux" | and (lower .chezmoi.kernel.osrelease | contains "microsoft") }}
+{{- end -}}
