@@ -1,0 +1,32 @@
+# vim: set filetype=sh :
+
+# Custom function for listing files
+lf() {
+   if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+        echo "Lists files using eza"
+        return
+    fi
+
+   eza --hyperlink -l --no-permissions --no-user -h --time-style "long-iso" --icons="always" -f --sort=Extension --group-directories-last "$@"
+}
+
+# Custom function for listing directories
+ld() {
+   if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+        echo "Lists directories using eza"
+        return
+    fi
+
+   eza --hyperlink -l --no-permissions --no-user -h --time-style "long-iso" --icons="always" --tree -D --sort=name -L 2 "$@"
+}
+
+lfdh() {
+   if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+        echo "Lists directories using eza"
+        return
+    fi
+
+   eza --hyperlink -l --no-permissions --no-user -h --time-style "long-iso" --icons="always" -a "$@"
+}
+
+

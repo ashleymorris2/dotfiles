@@ -83,6 +83,12 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   export GOPATH=$HOME/go
   export PATH=$GOPATH/bin:$GOROOT/bin:$HOME/.local/bin:$PATH
 fi
+
+if type brew &>/dev/null; then
+    FPATH="$(brew --prefix)/share/zsh/site-functions:${FPATH}"
+    autoload -Uz compinit
+    compinit
+fi
 # [END MACOS]
 
 # export MANPATH="/usr/local/man:$MANPATH"
@@ -96,9 +102,6 @@ export LANG=en_GB.UTF-8
 # else
 #   export EDITOR='mvim'
 # fi
-
-# Compilation flags
-# export ARCHFLAGS="-arch x86_64"
 
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
