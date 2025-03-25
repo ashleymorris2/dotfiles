@@ -10,7 +10,7 @@ Create the .env file at:
 
 ```bash
 mkdir -p ~/.config/rsync
-nano ~/.config/rsync/.env
+[nvim/vim/nano] ~/.config/rsync/.env
 ```
 
 Add the following environment variables (customizse as needed):
