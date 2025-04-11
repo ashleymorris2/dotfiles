@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# Load environment variables from ~/.config/rsync/.env
+ENV_FILE="$HOME/.config/rsync/.env"
+
+if [ -f "$ENV_FILE" ]; then
+    export $(grep -v '^#' "$ENV_FILE" | xargs)
+else
+    echo "Error: Missing .env file at $ENV_FILE"
+    exit 1
+fi
+
+usage() {
+    echo "Usage: $0 [push|pull]"
+    echo "  push - Sync local changes to remote"
+    echo "  pull - Sync remote changes to local"
+    exit 1
+}
+
+if [ "$#" -lt 1 ]; then
+    usage
+fi
+
+ACTION=$1
+shift  # Remove "push" or "pull" from the argument list
+EXTRA_ARGS=("$@") 
+
+if [ "$ACTION" == "push" ]; then
+    echo "Pushing to '$RSYNC_REMOTE_USER@$RSYNC_REMOTE_HOST:$RSYNC_REMOTE_DIR'"
+    rsync -avz "$RSYNC_LOCAL_DIR/" "$RSYNC_REMOTE_USER@$RSYNC_REMOTE_HOST:$RSYNC_REMOTE_DIR/" "${EXTRA_ARGS[@]}"
+elif [ "$ACTION" == "pull" ]; then
+    echo "Pulling from $RSYNC_REMOTE_DIR..."
+    rsync -avz "$RSYNC_REMOTE_USER@$RSYNC_REMOTE_HOST:$RSYNC_REMOTE_DIR/" "$RSYNC_LOCAL_DIR/" "${EXTRA_ARGS[@]}"
+else
+    usage
+fi
