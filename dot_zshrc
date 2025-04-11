@@ -2,7 +2,7 @@
 #               Zsh Configuration          #
 #############################################
 
-## Set up PATH ##
+## Set up PATH
 export PATH="$HOME/bin:/usr/local/bin:$PATH"
 export PATH="$PATH:$HOME/Developer/flutter/bin"
 export PATH="$HOME/.pub-cache/bin:$PATH"
@@ -19,6 +19,9 @@ export ZSH="$HOME/.oh-my-zsh"
 
 # Enable plugins
 plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+
+SAVEHIST=5000
+HISTFILE="$HOME/.zsh_history"
 
 source "$ZSH/oh-my-zsh.sh"
 

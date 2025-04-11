@@ -2,6 +2,7 @@
 local wezterm = require("wezterm")
 
 -- This will hold the configuration.
+local act = wezterm.action
 local config = wezterm.config_builder()
 
 -- FONT SETTINGS
@@ -51,4 +52,11 @@ config.default_prog = { "C:\\Program Files\\Git\\bin\\bash.exe", "--login" }
 
 
 -- KEYS
+config.mouse_bindings = {
+	{
+		event = { Down = { streak = 1, button = "Right" } },
+		mods = "NONE",
+		action = act({ PasteFrom = "Clipboard" }),
+	},
+}
 return config
