@@ -25,6 +25,8 @@ HISTFILE="$HOME/.zsh_history"
 
 source "$ZSH/oh-my-zsh.sh"
 
+alias obk='task -d ~/.taskfiles/restic'
+
 ## Import Custom Shell Functions ##
 if [ -f "$HOME/.config/shell/functions" ]; then
     source "$HOME/.config/shell/functions"
@@ -76,3 +78,5 @@ export LANG="en_GB.UTF-8"
 
 # Load Dart CLI completion if available
 [[ -f "$HOME/.dart-cli-completion/zsh-config.zsh" ]] && source "$HOME/.dart-cli-completion/zsh-config.zsh"
+
+

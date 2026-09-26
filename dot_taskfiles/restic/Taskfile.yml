@@ -1,0 +1,146 @@
+version: "3"
+
+env:
+  RESTIC_REPOSITORY: /Users/ashleymorris/Backups/restic-obsidian
+  RESTIC_PASSWORD_COMMAND: op read op://Personal/restic-obsidian/password
+  RCLONE_PASSWORD_COMMAND: op read op://Personal/restic-obsidian/rclone
+
+vars:
+  VAULT: /Users/ashleymorris/Documents/Vaults
+  RESTIC: /opt/homebrew/bin/restic
+  RCLONE: /opt/homebrew/bin/rclone
+  REMOTE: proton:Obsidian/backups
+  RCLONE_FLAGS: --protondrive-replace-existing-draft --transfers 2
+
+tasks:
+  default:
+    desc: Run a backup (same as `obk backup`)
+    cmds:
+      - task: backup
+
+  doctor:
+    silent: true
+    desc: Print config and sanity-check paths, tools and repo
+    summary: |
+      Shows which repo and vault paths the Taskfile resolves to, whether
+      they exist, whether restic and op are installed, and whether the
+      repo can be opened. Never prints the password.
+    cmds:
+      - 'echo "Repo:  $RESTIC_REPOSITORY"'
+      - 'echo "Vault: {{.VAULT}}"'
+      - "echo"
+      - cmd: 'test -d "$RESTIC_REPOSITORY" && echo "✓ repo folder exists" || echo "✗ repo folder missing"'
+        ignore_error: true
+      - cmd: 'test -f "$RESTIC_REPOSITORY/config" && echo "✓ repo initialised" || echo "✗ no restic config, run obk init"'
+        ignore_error: true
+      - cmd: 'test -d "{{.VAULT}}" && echo "✓ vault folder exists" || echo "✗ vault folder missing"'
+        ignore_error: true
+      - "echo"
+      - cmd: "{{.RESTIC}} version"
+        ignore_error: true
+      - cmd: 'op --version && echo "✓ op installed" || echo "✗ op missing"'
+        ignore_error: true
+      - "echo"
+      - cmd: 'ls -la "$RESTIC_REPOSITORY"'
+        ignore_error: true
+      - cmd: '{{.RESTIC}} cat config >/dev/null && echo "✓ repo opens with password" || echo "✗ repo would not open"'
+        ignore_error: true
+
+  init:
+    desc: One-time repo creation. Never needs running again
+    summary: |
+      Creates the restic repository inside the Proton Drive folder and
+      locks it to the password stored in 1Password.
+
+      Only run this once. If the repo already exists, restic will refuse.
+      Losing the 1Password item means losing access to every backup.
+    cmds:
+      - "{{.RESTIC}} init"
+
+  backup:
+    desc: Snapshot the vaults, then drop old snapshots
+    summary: |
+      1. Takes an encrypted, deduplicated snapshot of VAULT.
+         Skips workspace*.json (UI layout, changes constantly) and .trash.
+      2. Applies the retention policy and deletes data no snapshot needs:
+         last 10 runs, plus 1/day for 14 days, 1/week for 8 weeks,
+         1/month for 12 months.
+
+      The Proton Drive app uploads the changed repo files afterwards.
+      Let it finish syncing before shutting the Mac.
+    cmds:
+      - >-
+        {{.RESTIC}} backup "{{.VAULT}}"
+        --exclude '.obsidian/workspace*.json'
+        --exclude '.trash'
+      - >-
+        {{.RESTIC}} forget --prune
+        --keep-last 10 --keep-daily 14
+        --keep-weekly 8 --keep-monthly 12
+
+  verify:
+    desc: Confirm the Proton copy matches the local repo
+    summary: |
+      Compares file names and sizes between the local repo and Proton.
+      Any differences mean a push didn't complete; run `obk push`.
+    cmds:
+      - '{{.RCLONE}} check "$RESTIC_REPOSITORY" {{.REMOTE}} --size-only --exclude "locks/**"'
+
+  push:
+    desc: Upload the local repo to Proton Drive via rclone
+    summary: |
+      Syncs config/keys/data/index first and snapshots last, so the remote
+      never has a snapshot pointing at data that hasn't arrived yet.
+      Skips locks (only meaningful locally).
+
+      Mirrors deletions too, so pruned data is removed from Proton.
+    cmds:
+      - '{{.RCLONE}} sync "$RESTIC_REPOSITORY" {{.REMOTE}} --exclude "snapshots/**" --exclude "locks/**" {{.RCLONE_FLAGS}}'
+      - '{{.RCLONE}} sync "$RESTIC_REPOSITORY/snapshots" {{.REMOTE}}/snapshots {{.RCLONE_FLAGS}}'
+
+  pull:
+    desc: New Mac / lost local repo? Download the repo from Proton
+    summary: |
+      Copies the repo from Proton Drive into RESTIC_REPOSITORY.
+      Needs rclone configured first. After this, snapshots/restore work as normal.
+    cmds:
+      - '{{.RCLONE}} copy {{.REMOTE}} "$RESTIC_REPOSITORY" {{.RCLONE_FLAGS}}'
+      
+  check:
+    desc: Verify repo integrity (run monthly-ish)
+    summary: |
+      Checks the repo structure and reads back a random 5% of the stored
+      data to confirm it decrypts correctly. Rotating 5% samples means
+      repeated runs eventually cover everything.
+
+      Run this after a crash or interrupted sync, or if a backup errors.
+    cmds:
+      - "{{.RESTIC}} check --read-data-subset=5%"
+
+  snapshots:
+    desc: List available snapshots and their IDs
+    summary: |
+      Shows every snapshot with its ID, date and path. Use an ID with
+      `obk restore SNAPSHOT=<id>` to restore something other than latest.
+    cmds:
+      - "{{.RESTIC}} snapshots"
+
+  restore:
+    desc: Restore a snapshot to a folder (never overwrites the real vault)
+    summary: |
+      Restores into TARGET (default /tmp/vault-restore, wiped on reboot).
+      Restic recreates the full original path inside TARGET, e.g.
+      TARGET/Users/ashleymorris/Documents/Vaults/...
+
+      Examples:
+        obk restore                                    latest, to /tmp
+        obk restore TARGET=~/Desktop/restored          latest, to Desktop
+        obk restore SNAPSHOT=a1b2c3d4                  a specific snapshot
+        obk restore -- --include "**/Some Note.md"     just one file
+
+      Open /tmp in Finder with Cmd+Shift+G.
+    vars:
+      SNAPSHOT: '{{.SNAPSHOT | default "latest"}}'
+      TARGET: '{{.TARGET | default "/tmp/vault-restore"}}'
+    cmds:
+      - '{{.RESTIC}} restore {{.SNAPSHOT}} --target "{{.TARGET}}"'
